@@ -55,7 +55,11 @@ moving_average_ui <- function(id) {
   ns <- NS(id)
   sidebarLayout(
     sidebarPanel(
-      fileInput(ns("file"), "Upload an Excel file (.xlsx)", accept = ".xlsx"),
+      fileInput(
+        ns("file"),
+        "Upload an Excel or CSV file",
+        accept = c(".xlsx", ".csv")
+      ),
       selectInput(ns("column"), "Demand column", choices = NULL),
       radioButtons(ns("mode"), "How should N be chosen?",
                    choices = c("I will choose N" = "manual",
@@ -98,7 +102,26 @@ moving_average_server <- function(id) {
     # --- Read the Excel file ------------------------------------------
     data <- reactive({
       req(input$file)
-      readxl::read_excel(input$file$datapath)
+      
+      ext <- tolower(tools::file_ext(input$file$name))
+      
+      if (ext == "csv") {
+        first_line <- readLines(input$file$datapath, n = 1, warn = FALSE)
+        
+        separator <- if (grepl(";", first_line, fixed = TRUE)) ";" else ","
+        
+        read.table(
+          input$file$datapath,
+          header = TRUE,
+          sep = separator,
+          dec = if (separator == ";") "," else ".",
+          check.names = FALSE
+        )
+      } else if (ext == "xlsx") {
+        readxl::read_excel(input$file$datapath)
+      } else {
+        validate(need(FALSE, "Please upload an Excel or CSV file."))
+      }
     })
     
     # When a file is uploaded, list its numeric columns
@@ -111,30 +134,61 @@ moving_average_server <- function(id) {
     # Demand data in the selected column
     demand <- reactive({
       req(input$column)
+      
       d <- data()[[input$column]]
-      d[!is.na(d)]
+      
+      validate(
+        need(length(d) >= 2,
+             "At least two observations are required."),
+        need(all(is.finite(d)),
+             "Demand data must not contain missing or invalid values."),
+        need(all(d >= 0),
+             "Demand values cannot be negative.")
+      )
+      
+      as.numeric(d)
     })
     
     # --- Auto mode: try every N ---------------------------------------
     search <- reactive({
       req(input$mode == "auto", input$Nmax)
+      
       d <- demand()
-      validate(need(input$Nmax < length(d),
-                    "The largest N must be smaller than the number of observations."))
-      moving_average_search(d, input$Nmax)
+      
+      validate(
+        need(
+          is.finite(input$Nmax) &&
+            input$Nmax >= 2 &&
+            input$Nmax == floor(input$Nmax) &&
+            input$Nmax < length(d),
+          "Largest N must be a whole number between 2 and the number of observations minus 1."
+        )
+      )
+      
+      moving_average_search(d, as.integer(input$Nmax))
     })
     
     # --- The N to use -------------------------------------------------
     chosen_N <- reactive({
+      
       if (input$mode == "manual") {
         req(input$N)
-        validate(need(input$N < length(demand()),
-                      "N must be smaller than the number of observations."))
-        input$N
+        
+        validate(
+          need(is.finite(input$N) &&
+                 input$N >= 1 &&
+                 input$N == floor(input$N) &&
+                 input$N < length(demand()),
+               "N must be a positive whole number smaller than the number of observations.")
+        )
+        
+        as.integer(input$N)
+        
       } else {
         tab <- search()
         tab$N[which.min(tab[[input$criterion]])]
       }
+      
     })
     
     # --- Forecasts and errors with the chosen N -----------------------

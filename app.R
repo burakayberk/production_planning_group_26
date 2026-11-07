@@ -17,9 +17,13 @@ ui <- navbarPage("Production Planning",
                    simple_exponential_smoothing_ui("ses")),
                    tabPanel(
                      "Seasonal Factors",
-                     seasonal_factors_ui("seasonal_factors")
-                   )
+                     seasonal_factors_ui("seasonal_factors")),
+                 tabPanel(
+                   "Holt's Method",
+                   holt_method_ui("holt")
                  )
+                   )
+                
 server <- function(input, output, session) {
   learning_curve_server("learning_curve")
   moving_average_server("moving_average")
@@ -27,6 +31,7 @@ server <- function(input, output, session) {
   weighted_moving_average_server("weighted_moving_average")
   simple_exponential_smoothing_server("ses")
   seasonal_factors_server("seasonal_factors")
+  holt_method_server("holt")
 }
 
 shinyApp(ui, server)

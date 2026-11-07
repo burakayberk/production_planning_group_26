@@ -14,15 +14,19 @@ ui <- navbarPage("Production Planning",
                           weighted_moving_average_ui("weighted_moving_average")),
                  tabPanel(
                    "Simple Exponential Smoothing",
-                   simple_exponential_smoothing_ui("ses")
+                   simple_exponential_smoothing_ui("ses")),
+                   tabPanel(
+                     "Seasonal Factors",
+                     seasonal_factors_ui("seasonal_factors")
+                   )
                  )
-)
 server <- function(input, output, session) {
   learning_curve_server("learning_curve")
   moving_average_server("moving_average")
   test_module_server("test_module")
   weighted_moving_average_server("weighted_moving_average")
   simple_exponential_smoothing_server("ses")
+  seasonal_factors_server("seasonal_factors")
 }
 
 shinyApp(ui, server)

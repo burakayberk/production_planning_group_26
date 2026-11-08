@@ -17,8 +17,7 @@ The `test_data/` directory contains datasets used to validate the forecasting an
 
 | Dataset | Purpose |
 |---|---|
-| `aggregate_planning_test_data.csv` | Demand forecasts and working days for aggregate planning methods |
-| `production_planning_test_data.xlsx` | Additional forecasting and aggregate planning test scenarios |
+
 
 # How to Use
 

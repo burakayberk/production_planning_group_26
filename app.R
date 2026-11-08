@@ -20,8 +20,11 @@ ui <- navbarPage("Production Planning",
                      seasonal_factors_ui("seasonal_factors")),
                  tabPanel(
                    "Holt's Method",
-                   holt_method_ui("holt")
-                 )
+                   holt_method_ui("holt")),
+                 tabPanel(
+                   "Seasonal Decomposition",
+                   seasonal_decomposition_ui("seasonal_decomposition")), 
+              
                    )
                 
 server <- function(input, output, session) {
@@ -32,6 +35,7 @@ server <- function(input, output, session) {
   simple_exponential_smoothing_server("ses")
   seasonal_factors_server("seasonal_factors")
   holt_method_server("holt")
+  seasonal_decomposition_server("seasonal_decomposition")
 }
 
 shinyApp(ui, server)

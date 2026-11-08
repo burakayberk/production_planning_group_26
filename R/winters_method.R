@@ -117,15 +117,16 @@ winters_method_ui <- function(id) {
                            choices = c("MAD", "MSE", "MAPE"), selected = "MSE")
       ),
       shiny::radioButtons(ns("initial_mode"), "Initial values",
-                          choices = c("Estimate from first two seasons" = "estimate",
+                          choices = c("Regression estimate" = "regression",
+                                      "Estimate from first two seasons" = "estimate",
                                       "Manual initial level and trend" = "manual"),
-                          selected = "estimate"),
+                          selected = "regression"),
       shiny::conditionalPanel(
         condition = "input.initial_mode == 'manual'", ns = ns,
         shiny::numericInput(ns("initial_level"), "Level at end of first season (L_m)", 200),
         shiny::numericInput(ns("initial_trend"), "Initial trend per period (T_m)", 0)
       ),
-      shiny::helpText("Initial seasonal factors are estimated from the first two seasons. ",
+      shiny::helpText("Initial seasonal factors follow the selected initialization method. ",
                       "For manual initialization, you may override level and trend."),
       shiny::numericInput(ns("horizon"), "Future periods to forecast",
                           12, min = 1, max = 36, step = 1)
@@ -208,6 +209,26 @@ winters_method_server <- function(id) {
                        error = function(e) e)
       shiny::validate(shiny::need(!inherits(init, "error"),
                                   if (inherits(init, "error")) conditionMessage(init) else TRUE))
+      if (input$initial_mode == "regression") {
+        periods <- seq_along(v$d)
+        season <- factor((periods - 1L) %% v$m + 1L)
+        # Seasonal fixed effects keep the trend estimate separate from seasonality.
+        fit <- stats::lm(v$d ~ periods + season)
+        B <- unname(stats::coef(fit)["periods"])
+        baseline_at_m <- mean(stats::predict(fit,
+          newdata = data.frame(periods = rep(v$m, v$m),
+                              season = factor(seq_len(v$m), levels = seq_len(v$m)))))
+        baseline <- baseline_at_m + (periods - v$m) * B
+        if (input$model == "additive") {
+          factors <- as.numeric(tapply(v$d - baseline, season, mean))
+          factors <- factors - mean(factors)
+        } else {
+          shiny::validate(shiny::need(all(baseline > 0), "Regression produces nonpositive levels; use additive or manual initialization."))
+          factors <- as.numeric(tapply(v$d / baseline, season, mean))
+          factors <- factors / mean(factors)
+        }
+        init <- list(level = baseline_at_m, trend = B, seasonal = factors)
+      }
       if (input$initial_mode == "manual") {
         shiny::req(input$initial_level, input$initial_trend)
         L <- input$initial_level

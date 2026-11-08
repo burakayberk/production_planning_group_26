@@ -1,0 +1,12 @@
+library(shiny)
+for(f in list.files('R',pattern='[.]R$',full.names=TRUE))source(f)
+x<-data.frame(Family=c('A','B'),Demand=c(100,400),SetupCost=c(1,1),OpeningInventory=c(100,400))
+r<-disaggregate_square_root(x,300);stopifnot(max(abs(r$Production-c(100,200)))<1e-6)
+x$OpeningInventory<-0;r<-disaggregate_square_root(x,600);stopifnot(abs(sum(r$Production)-600)<1e-6,all(r$EndingInventory>=0))
+stopifnot(inherits(try(disaggregate_square_root(x,100),silent=TRUE),'try-error'))
+x$Demand<-0;x$SetupCost<-0;r<-disaggregate_square_root(x,100);stopifnot(all(r$Production==50))
+testServer(disaggregation_server,{
+ session$setInputs(total=1200,families='Family,Demand,SetupCost,OpeningInventory\nA,500,100,100\nB,300,200,50\nC,200,150,0')
+ session$setInputs(run=1);stopifnot(abs(sum(result()$Production)-1200)<1e-6,nzchar(output$summary))
+})
+cat('Disaggregation checks passed.\n')

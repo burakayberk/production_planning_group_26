@@ -30,6 +30,10 @@ ui <- navbarPage("Production Planning",
                  tabPanel(
                    "AR Method",
                    ar_method_ui("ar")),
+                 tabPanel(
+                   "MA Method",
+                   ma_method_ui("ma")),
+                 
                  
               
                    )
@@ -45,6 +49,7 @@ server <- function(input, output, session) {
   seasonal_decomposition_server("seasonal_decomposition")
   winters_method_server("winters")
   ar_method_server("ar")
+  ma_method_server("ma")
 }
 
 shinyApp(ui, server)

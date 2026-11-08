@@ -24,6 +24,9 @@ ui <- navbarPage("Production Planning",
                  tabPanel(
                    "Seasonal Decomposition",
                    seasonal_decomposition_ui("seasonal_decomposition")), 
+                 tabPanel(
+                   "Winters' Method",
+                   winters_method_ui("winters")),
               
                    )
                 
@@ -36,6 +39,7 @@ server <- function(input, output, session) {
   seasonal_factors_server("seasonal_factors")
   holt_method_server("holt")
   seasonal_decomposition_server("seasonal_decomposition")
+  winters_method_server("winters")
 }
 
 shinyApp(ui, server)

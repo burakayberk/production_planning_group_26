@@ -33,6 +33,9 @@ ui <- navbarPage("Production Planning",
                  tabPanel(
                    "MA Method",
                    ma_method_ui("ma")),
+                 tabPanel(
+                   "ARMA Method",
+                   arma_method_ui("arma")),
                  
                  
               
@@ -50,6 +53,7 @@ server <- function(input, output, session) {
   winters_method_server("winters")
   ar_method_server("ar")
   ma_method_server("ma")
+  arma_method_server("arma")
 }
 
 shinyApp(ui, server)
